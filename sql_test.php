@@ -1,41 +1,73 @@
 <?php
 
-$server_name = "localhost";
-$username = "program_r";
-$password = "program_r";
+echo "Tasks:<br>";
 
-$conn = new mysqli($server_name, $username, $password);
+echo json_encode(getTasks()) . "<br>";
 
-if($conn->connect_error){
-    die("Connection failed" . $conn->connect_error);
-}
+echo "<br>Users:<br>";
 
-echo "Tasks:";
+echo json_encode(getUsers()) . "<br>";
 
-$sql = "SELECT * FROM assesment_2.tasks";
-$result = $conn->query($sql);
+function getConn(){
+    $server_name = "localhost";
+    $username = "program_r";
+    $password = "program_r";
 
-if($result->num_rows > 0){
-    while ($row = $result->fetch_assoc()){
-        $data = $row["uuid"] . " : ". $row["title"] . " : " . $row["content"];
-        echo "<p>$data</p>";
+    $conn = new mysqli($server_name, $username, $password);
+
+    if($conn->connect_error){
+        die("Connection failed" . $conn->connect_error);
     }
-} else {
-    echo "0 Results";
+
+    return $conn;
 }
 
-echo "Users:";
+function getTasks(){
+    $conn = getConn();
+    $sql = "SELECT * FROM assesment_2.tasks;";
+    $result = $conn->query($sql);
 
-$sql = "SELECT username, uuid, permission_level FROM assesment_2.users;";
-$result = $conn->query($sql);
+    $output = array();
 
-if($result->num_rows > 0){
-    while ($row = $result->fetch_assoc()){
-        $data = $row["uuid"] . " : ". $row["username"] . " : " . $row["permission_level"];
-        echo "<p>$data</p>";
+    if($result->num_rows > 0){
+        while ($row = $result->fetch_assoc()){
+            $data = [
+                "title" => $row["title"],
+                "content" => $row["content"],
+                "status" => $row["status"],
+                "owner" => $row["owner"],
+                "completion_date" => $row["completion_date"]
+            ];
+            $output[$row["uuid"]] = $data;
+        }
+    } else {
+        echo "0 Results";
     }
-} else {
-    echo "0 Results";
+
+    $conn->close();
+    return $output;
 }
 
-$conn->close();
+function getUsers(){
+    $conn = getConn();
+    $sql = "SELECT uuid, username, password_reset, permission_level FROM assesment_2.users;";
+    $result = $conn->query($sql);
+
+    $output = array();
+
+    if($result->num_rows > 0){
+        while ($row = $result->fetch_assoc()){
+            $data = [
+                "username" => $row["username"],
+                "password_reset" => $row["password_reset"],
+                "permission_level" => $row["permission_level"],
+            ];
+            $output[$row["uuid"]] = $data;
+        }
+    } else {
+        echo "0 Results";
+    }
+
+    $conn->close();
+    return $output;
+}
