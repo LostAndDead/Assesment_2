@@ -117,9 +117,33 @@ function createUser($username, $email, $password, $passwordReset){
         $sqlStatement->execute();
         return "Worked";
     } catch (mysqli_sql_exception $exception) {
-        $msg = $exception->getCode();
-        if($msg = 1062){
+        $code = $exception->getCode();
+        if($code = 1062){
             return "Duplicate";
         }
+    }
+    return "shrug";
+}
+
+function checkLogin($email, $password) {
+    $conn = getReadonlyConn();
+    $sql = "SELECT password_hash FROM assesment_2.users WHERE email = ?;";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $email);
+    try {
+        $sqlStatement->execute();
+        $result = $sqlStatement->get_result();
+        if($result->num_rows > 0){
+            $row = $result->fetch_assoc();
+            if (password_verify($password, $row["password_hash"])) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    } catch (mysqli_sql_exception $exception) {
+        return false;
     }
 }

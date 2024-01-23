@@ -34,16 +34,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    //TODO: text beneath submit button doesnt update properly if errored/changed
     if(!$err && !$usernameErr && !$emailErr && !$passwordErr){
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
         $result = createUser($username, $email, $passwordHash, false);
         switch ($result){
             case "Duplicate": {
                 $err = "Email or username is already in use";
+                break;
             }
             case "Worked": {
-                $err = "User created, please login.";
+                $err = "User created, you will be redirected to login.";
+                header( "refresh:3;url=login.php?email=" . $email );
+                break;
+            }
+            case "shrug": {
+                $err = "Something went wrong, I dont know how. This should never happen";
+                break;
             }
         }
     }
@@ -68,10 +74,10 @@ function test_input($data) {
 
 <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
     Username: <input type="text" name="username" value="<?php echo $username;?>">
-    <span class="error">* <?php echo $usernameErr;?></span>
+    <span class="error"><?php echo $usernameErr;?></span>
     <br><br>
     E-mail: <input type="text" name="email" value="<?php echo $email;?>">
-    <span class="error">* <?php echo $emailErr;?></span>
+    <span class="error"><?php echo $emailErr;?></span>
     <br><br>
     Password: <input type="text" name="password" value="<?php echo $password;?>">
     <span class="error"><?php echo $passwordErr;?></span>
@@ -82,4 +88,3 @@ function test_input($data) {
     <br>
     <span class="error"><?php echo $err;?></span>
 </form>
-<?php
