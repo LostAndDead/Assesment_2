@@ -169,23 +169,3 @@ function test_input($data) {
         </div>
     </div>
 </section>
-
-<!--
-
-<form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
-    Username: <input type="text" name="username" value="<?php echo $username;?>">
-    <span class="error"><?php echo $usernameErr;?></span>
-    <br><br>
-    E-mail: <input type="text" name="email" value="<?php echo $email;?>">
-    <span class="error"><?php echo $emailErr;?></span>
-    <br><br>
-    Password: <input type="text" name="password" value="<?php echo $password;?>">
-    <span class="error"><?php echo $passwordErr;?></span>
-    <br><br>
-    Password Confirm: <input type="text" name="password_confirm" value="<?php echo $passwordConfirm;?>">
-    <br><br>
-    <input type="submit" name="submit" value="Submit">
-    <br>
-    <span class="error"><?php echo $msg;?></span>
-</form>
--->

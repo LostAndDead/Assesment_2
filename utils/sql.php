@@ -135,11 +135,7 @@ function checkLogin($email, $password) {
         $result = $sqlStatement->get_result();
         if($result->num_rows > 0){
             $row = $result->fetch_assoc();
-            if (password_verify($password, $row["password_hash"])) {
-                return true;
-            } else {
-                return false;
-            }
+            return password_verify($password, $row["password_hash"]);
         } else {
             return false;
         }
