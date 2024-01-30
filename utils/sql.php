@@ -1,5 +1,12 @@
 <?php
 
+/**
+ *
+ * Gets a read only connection to the database
+ *
+ * @return mysqli
+ *
+ */
 function getReadonlyConn(){
     $server_name = "localhost";
     $username = "program_r";
@@ -14,6 +21,13 @@ function getReadonlyConn(){
     return $conn;
 }
 
+/**
+ *
+ * Gets a write permission connection to the database
+ *
+ * @return mysqli
+ *
+ */
 function getWriteConn(){
     $server_name = "localhost";
     $username = "program";
@@ -28,6 +42,13 @@ function getWriteConn(){
     return $conn;
 }
 
+/**
+ *
+ * Fetch a list of all the tasks from the database
+ *
+ * @return array
+ *
+ */
 function getTasks(){
     $conn = getReadonlyConn();
     $sql = "SELECT * FROM assesment_2.tasks;";
@@ -54,6 +75,14 @@ function getTasks(){
     return $output;
 }
 
+/**
+ *
+ * Fetches all the users from the database
+ * Password data is omitted
+ *
+ * @return array
+ *
+ */
 function getUsers(){
     $conn = getReadonlyConn();
     $sql = "SELECT uuid, username, password_reset, permission_level, email FROM assesment_2.users;";
@@ -79,6 +108,15 @@ function getUsers(){
     return $output;
 }
 
+/**
+ *
+ * Gets a users full data by their email
+ *
+ * @param string $email The email to query the user for.
+ *
+ * @return array
+ *
+ */
 function getUser($email){
     $conn = getReadonlyConn();
     $sql = "SELECT * FROM assesment_2.users WHERE email = ?;";
@@ -108,6 +146,18 @@ function getUser($email){
     return $output;
 }
 
+/**
+ *
+ * Create a new user in the database
+ *
+ * @param string $username The username of the user to add
+ * @param string $email The email address of the user to add
+ * @param string $password The hashed password for the user
+ * @param bool $passwordReset Whether the user will be forced to reset their password
+ *
+ * @return string The result as a string (Worked | Duplicate | shrug)
+ *
+ */
 function createUser($username, $email, $password, $passwordReset){
     $conn = getWriteConn();
     $sql = "INSERT INTO assesment_2.users (uuid, username, email, password_hash, password_reset) VALUES (uuid(), ?, ?, ?, ?);";
@@ -125,6 +175,16 @@ function createUser($username, $email, $password, $passwordReset){
     return "shrug";
 }
 
+/**
+ *
+ * Checks a users login credentials
+ *
+ * @param string $email The email to query the user for.
+ * @param string $password Plain text password for comparison
+ *
+ * @return bool True for valid, False for invalid or error
+ *
+ */
 function checkLogin($email, $password) {
     $conn = getReadonlyConn();
     $sql = "SELECT password_hash FROM assesment_2.users WHERE email = ?;";
@@ -139,6 +199,113 @@ function checkLogin($email, $password) {
         } else {
             return false;
         }
+    } catch (mysqli_sql_exception $exception) {
+        return false;
+    }
+}
+
+/**
+ *
+ * Gets a users UUID from their email
+ *
+ * @param string $email The email to query
+ *
+ * @return string
+ *
+ */
+function getUUID($email) {
+    $conn = getReadonlyConn();
+    $sql = "SELECT uuid FROM assesment_2.users WHERE email = ?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $email);
+    try {
+        $sqlStatement->execute();
+        $result = $sqlStatement->get_result();
+        if($result->num_rows > 0){
+            $row = $result->fetch_assoc();
+            return $row["uuid"];
+        } else {
+            return false;
+        }
+    } catch (mysqli_sql_exception $exception) {
+        return false;
+    }
+}
+
+/**
+ *
+ * Gets a users Permission Level from their UUID
+ *
+ * @param string $uuid The UUID to query
+ *
+ * @return int
+ *
+ */
+function getPermissionLevel($uuid){
+    $conn = getReadonlyConn();
+    $sql = "SELECT permission_level FROM assesment_2.users WHERE uuid = ?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $uuid);
+    try {
+        $sqlStatement->execute();
+        $result = $sqlStatement->get_result();
+        if($result->num_rows > 0){
+            $row = $result->fetch_assoc();
+            return $row["permission_level"];
+        } else {
+            return false;
+        }
+    } catch (mysqli_sql_exception $exception) {
+        return false;
+    }
+}
+
+/**
+ *
+ * Gets a users Username from their UUID
+ *
+ * @param string $uuid The UUID to query
+ *
+ * @return int
+ *
+ */
+function getUsername($uuid){
+    $conn = getReadonlyConn();
+    $sql = "SELECT username FROM assesment_2.users WHERE uuid = ?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $uuid);
+    try {
+        $sqlStatement->execute();
+        $result = $sqlStatement->get_result();
+        if($result->num_rows > 0){
+            $row = $result->fetch_assoc();
+            return $row["username"];
+        } else {
+            return false;
+        }
+    } catch (mysqli_sql_exception $exception) {
+        return false;
+    }
+}
+
+/**
+ *
+ * Change a users password
+ *
+ * @param string $uuid The UUID of the user to change
+ * @param string $password The new Hashed password
+ *
+ * @return bool True for valid, False for error
+ *
+ */
+function changePassword($uuid, $password){
+    $conn = getWriteConn();
+    $sql = "UPDATE assesment_2.users SET password_hash = ? WHERE UUID = ?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("ss", $password, $uuid);
+    try {
+        $sqlStatement->execute();
+        return true;
     } catch (mysqli_sql_exception $exception) {
         return false;
     }
