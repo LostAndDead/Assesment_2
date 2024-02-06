@@ -168,7 +168,7 @@ function createUser($username, $email, $password, $passwordReset){
         return "Worked";
     } catch (mysqli_sql_exception $exception) {
         $code = $exception->getCode();
-        if($code = 1062){
+        if($code == 1062){
             return "Duplicate";
         }
     }
@@ -416,9 +416,6 @@ function getTask($taskUUID, $userUUID){
  */
 function statusStrToInt($status){
     switch ($status){
-        case "Not started": {
-            return 1;
-        }
         case "Started": {
             return 2;
         }
@@ -444,9 +441,6 @@ function statusStrToInt($status){
  */
 function statusIntToStr($status){
     switch ($status){
-        case 1: {
-            return "Not started";
-        }
         case 2: {
             return "Started";
         }
