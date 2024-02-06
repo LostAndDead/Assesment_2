@@ -310,3 +310,154 @@ function changePassword($uuid, $password){
         return false;
     }
 }
+
+/**
+ *
+ * Create a new task
+ *
+ * @param string $title The title of the new task
+ * @param string $content The content of the new task
+ * @param int $status The Status of the new task
+ * @param int $completionDate The completion date of the new task
+ * @param string $uuid The UUID of the user creating the task
+ *
+ * @return bool True for successful, false for failed
+ */
+function createTask($title, $content, $status, $completionDate, $uuid){
+    $conn = getWriteConn();
+    $sql = "INSERT INTO assesment_2.tasks (uuid, title, content, status, owner, completion_date) VALUES (uuid(),?,?,?,?,?)";
+    $date = date("Y-m-d H:i:s", $completionDate);
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("ssiss", $title, $content, $status, $uuid, $date);
+    try {
+        $sqlStatement->execute();
+        return true;
+    } catch (mysqli_sql_exception $exception) {
+        return false;
+    }
+}
+
+/**
+ *
+ * Update a task
+ *
+ * @param string $taskUUID The UUID of the task to update
+ * @param string $title The title of the new task
+ * @param string $content The content of the new task
+ * @param int $status The Status of the new task
+ * @param int $completionDate The completion date of the new task
+ * @param string $uuid The UUID of the user creating the task
+ *
+ * @return bool True for successful, false for failed
+ */
+function updateTask($taskUUID, $title, $content, $status, $completionDate, $uuid){
+    $conn = getWriteConn();
+    $sql = "UPDATE assesment_2.tasks SET title=?, content=?, status=?, owner=?, completion_date=? WHERE uuid=?";
+    $date = date("Y-m-d H:i:s", $completionDate);
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("ssisss", $title, $content, $status, $uuid, $date, $taskUUID);
+    try {
+        $sqlStatement->execute();
+        return true;
+    } catch (mysqli_sql_exception $exception) {
+        return false;
+    }
+}
+
+/**
+ *
+ * Get a task from its UUID, will only work if user has permission
+ *
+ * @param string $taskUUID
+ * @param string $userUUID
+ *
+ * @return array The task object
+ */
+function getTask($taskUUID, $userUUID){
+    $conn = getReadonlyConn();
+    $sql = "SELECT * FROM assesment_2.tasks WHERE uuid=?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $taskUUID);
+    $sqlStatement->execute();
+    $result = $sqlStatement->get_result();
+
+    $output = array();
+
+    if($result->num_rows > 0){
+        while ($row = $result->fetch_assoc()){
+            $data = [
+                "title" => $row["title"],
+                "content" => $row["content"],
+                "status" => $row["status"],
+                "owner" => $row["owner"],
+                "completion_date" => $row["completion_date"]
+            ];
+            $output[$row["uuid"]] = $data;
+        }
+    } else {
+        return null;
+    }
+    $conn->close();
+
+    $perm_level = getPermissionLevel($userUUID);
+    if($userUUID != $output[$taskUUID]["owner"] && $perm_level < 2){
+        return null;
+    }
+    return $output;
+}
+
+/**
+ *
+ * Convert a status string to its int equivalent
+ *
+ * @param string $status Status to change
+ *
+ * @return int The ID of the status
+ */
+function statusStrToInt($status){
+    switch ($status){
+        case "Not started": {
+            return 1;
+        }
+        case "Started": {
+            return 2;
+        }
+        case "On hold": {
+            return 3;
+        }
+        case "Completed": {
+            return 4;
+        }
+        default: {
+            return 1;
+        }
+    }
+}
+
+/**
+ *
+ * Convert a status string to its int equivalent
+ *
+ * @param int $status Status ID to get
+ *
+ * @return string The text of the status
+ */
+function statusIntToStr($status){
+    switch ($status){
+        case 1: {
+            return "Not started";
+        }
+        case 2: {
+            return "Started";
+        }
+        case 3: {
+            return "On hold";
+        }
+        case 4: {
+            return "Completed";
+        }
+        default: {
+            return "Not started";
+        }
+    }
+}
