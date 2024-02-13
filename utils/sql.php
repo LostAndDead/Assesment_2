@@ -67,8 +67,6 @@ function getTasks(){
             ];
             $output[$row["uuid"]] = $data;
         }
-    } else {
-        echo "0 Results";
     }
 
     $conn->close();
@@ -83,9 +81,41 @@ function getTasks(){
  * @return array
  *
  */
-function getUsers(){
+function getAllUsers(){
     $conn = getReadonlyConn();
-    $sql = "SELECT uuid, username, password_reset, permission_level, email FROM assesment_2.users;";
+    $sql = "SELECT uuid, username, password_reset, permission_level, email, active FROM assesment_2.users;";
+    $result = $conn->query($sql);
+
+    $output = array();
+
+    if($result->num_rows > 0){
+        while ($row = $result->fetch_assoc()){
+            $data = [
+                "username" => $row["username"],
+                "email" => $row["email"],
+                "password_reset" => $row["password_reset"],
+                "permission_level" => $row["permission_level"],
+                "active" => $row["active"]
+            ];
+            $output[$row["uuid"]] = $data;
+        }
+    }
+
+    $conn->close();
+    return $output;
+}
+
+/**
+ *
+ * Fetches all the disabled users from the database
+ * Password data is omitted
+ *
+ * @return array
+ *
+ */
+function getDisabledUsers(){
+    $conn = getReadonlyConn();
+    $sql = "SELECT uuid, username, password_reset, permission_level, email FROM assesment_2.users WHERE active = false;";
     $result = $conn->query($sql);
 
     $output = array();
@@ -100,8 +130,6 @@ function getUsers(){
             ];
             $output[$row["uuid"]] = $data;
         }
-    } else {
-        echo "0 Results";
     }
 
     $conn->close();
@@ -112,38 +140,51 @@ function getUsers(){
  *
  * Gets a users full data by their email
  *
- * @param string $email The email to query the user for.
+ * @param string $uuid The uuid to query the user for.
  *
  * @return array
  *
  */
-function getUser($email){
+function getUser($uuid){
     $conn = getReadonlyConn();
-    $sql = "SELECT * FROM assesment_2.users WHERE email = ?;";
+    $sql = "SELECT * FROM assesment_2.users WHERE uuid = ?;";
     $sqlStatement = $conn->prepare($sql);
-    $sqlStatement->bind_param("s", $email);
+    $sqlStatement->bind_param("s", $uuid);
     $sqlStatement->execute();
-    $result = $sqlStatement->get_result();
-
-    $output = array();
-
-    if($result->num_rows > 0){
-        while ($row = $result->fetch_assoc()){
-            $data = [
-                "username" => $row["username"],
-                "email" => $row["email"],
-                "password_hash" => $row["password_hash"],
-                "password_reset" => $row["password_reset"],
-                "permission_level" => $row["permission_level"],
-            ];
-            $output[$row["uuid"]] = $data;
+    try {
+        $sqlStatement->execute();
+        $result = $sqlStatement->get_result();
+        if($result->num_rows > 0){
+            return $result->fetch_assoc();
+        } else {
+            return null;
         }
-    } else {
+    } catch (mysqli_sql_exception $exception) {
         return null;
     }
+}
 
-    $conn->close();
-    return $output;
+/**
+ *
+ * Update a users basic information based on uuid
+ *
+ * @param string $uuid The uuid to update for
+ * @param int $permLevel The permission level to set for the user
+ * @param bool $active The active status, false is disabled
+ *
+ * @return bool
+ */
+function patchUser($uuid, $permLevel, $active){
+    $conn = getWriteConn();
+    $sql = "UPDATE assesment_2.users SET permission_level = ?, active = ? WHERE UUID = ?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("sis", $permLevel, $active, $uuid);
+    try {
+        $sqlStatement->execute();
+        return true;
+    } catch (mysqli_sql_exception $exception) {
+        return false;
+    }
 }
 
 /**
@@ -187,7 +228,7 @@ function createUser($username, $email, $password, $passwordReset){
  */
 function checkLogin($email, $password) {
     $conn = getReadonlyConn();
-    $sql = "SELECT password_hash FROM assesment_2.users WHERE email = ?;";
+    $sql = "SELECT password_hash FROM assesment_2.users WHERE email = ? AND active = true;";
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("s", $email);
     try {

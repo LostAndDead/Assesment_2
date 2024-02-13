@@ -8,7 +8,7 @@ echo json_encode(getTasks()) . "<br>";
 
 echo "<br>Users:<br>";
 
-echo json_encode(getUsers()) . "<br>";
+echo json_encode(getAllUsers()) . "<br>";
 
 echo "<br>Admin:<br>";
 

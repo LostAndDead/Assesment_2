@@ -12,6 +12,10 @@ if(!empty($_SESSION["uuid"])){
     $uuid = $_SESSION["uuid"];
     $permissionLevel = getPermissionLevel($uuid);
 }
+
+if(!$loggedIn){
+    header("Location: ./login.php");
+}
 ?>
 
 <!DOCTYPE html>
@@ -32,9 +36,12 @@ if(!empty($_SESSION["uuid"])){
     <div class="container-fluid">
         <a class="navbar-brand" href="#">Home</a>
         <?php
-        if($permissionLevel == 2){
-            echo '<a class="navbar-brand" href="/manage.php">Manage</a>';
+        if($permissionLevel >= 1){
             echo '<a class="navbar-brand" href="tasks/edit_task.php">Create Task</a>';
+        }
+        if($permissionLevel >= 2){
+            echo '<a class="navbar-brand" href="manage.php">Manage</a>';
+
         }
         ?>
         <div class="collapse navbar-collapse justify-content-end">
@@ -62,26 +69,48 @@ if(!empty($_SESSION["uuid"])){
             <div class="card bg-dark text-white" style="border-radius: 1rem;">
                 <div class="card-body p-3 text-center">
                     <?php
-                    if($loggedIn){
-                        echo '<h1>Welcome ' . getUsername($uuid) . '</h1>';
-                        switch ($permissionLevel){
-                            case 0: {
-                                echo '<h2>You are a Guest</h2>';
-                                break;
-                            }
-                            case 1: {
-                                echo '<h2>You are a User</h2>';
-                                break;
-                            }
-                            case 2: {
-                                echo '<h2>You are an Admin</h2>';
-                                break;
-                            }
-                        }
-                    } else {
-                        echo '<h1>Please log in to proceed</h1>';
-                    }
+                       echo '<h1>Welcome ' . getUsername($uuid) . '</h1>';
+                       switch ($permissionLevel){
+                           case 0: {
+                               echo '<h2>You are a Guest</h2>';
+                               break;
+                           }
+                           case 1: {
+                               echo '<h2>You are a User</h2>';
+                               break;
+                           }
+                           case 2: {
+                               echo '<h2>You are an Admin</h2>';
+                               break;
+                           }
+                       }
                     ?>
+                    <table class="table table-dark">
+                        <thead>
+                        <tr>
+                            <th scope="col">Task Title</th>
+                            <th scope="col">Content</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Owner</th>
+                            <th scope="col">Completion Date</th>
+                            <th scope="col">Controls</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php
+                        $tasks = getTasks();
+                        foreach ($tasks as $key => $task){
+                            echo '<tr>';
+                            echo '<th scope="row">' . $task["title"] .'</th>';
+                            echo '<th>' . $task["content"] .'</th>';
+                            echo '<th>' . statusIntToStr($task["status"]) .'</th>';
+                            echo '<th>' . getUsername($task["owner"]) .'</th>';
+                            echo '<th>' . $task["completion_date"] .'</th>';
+                            echo '</tr>';
+                        }
+                        ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
