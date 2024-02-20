@@ -66,12 +66,24 @@ function test_input($data) {
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="homepage.php">Home</a>
+        <a class="navbar-brand" href="./homepage.php">Home</a>
+        <?php
+        if($permissionLevel >= 1){
+            echo '<a class="navbar-brand" href="tasks/edit_task.php">Create Task</a>';
+        }
+        if($permissionLevel >= 2){
+            echo '<a class="navbar-brand" href="manage.php">Manage</a>';
+
+        }
+        ?>
         <div class="collapse navbar-collapse justify-content-end">
             <ul class="navbar-nav">
                 <li class="nav-item">
                     <?php
                     if($loggedIn){
+                        echo '<a class="nav-link" href="password_reset.php">Change Password</a>';
+                        echo '</li>';
+                        echo '<li class="nav-item">';
                         echo '<a class="nav-link" href="logout.php">Logout</a>';
                     } else {
                         echo '<a class="nav-link" href="login.php">Login</a>';

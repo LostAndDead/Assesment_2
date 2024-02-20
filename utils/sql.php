@@ -51,7 +51,7 @@ function getWriteConn(){
  */
 function getTasks(){
     $conn = getReadonlyConn();
-    $sql = "SELECT * FROM assesment_2.tasks AND deleted = false ORDER BY priority;";
+    $sql = "SELECT * FROM assesment_2.tasks ORDER BY priority;";
     $result = $conn->query($sql);
 
     $output = array();
@@ -64,7 +64,8 @@ function getTasks(){
                 "status" => $row["status"],
                 "owner" => $row["owner"],
                 "completion_date" => $row["completion_date"],
-                "priority" => $row["priority"]
+                "priority" => $row["priority"],
+                "deleted" => $row["deleted"]
             ];
             $output[$row["uuid"]] = $data;
         }

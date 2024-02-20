@@ -20,57 +20,69 @@ if(!$loggedIn || $permissionLevel < 2){
 
 $msg = $userErr = $permissionErr = "";
 $userid = $active = $permLevel = "";
+$page = "users";
 
 if($_SERVER["REQUEST_METHOD"] == "GET") {
-    if (!empty($_GET["userid"])) {
-        $userid = test_input($_GET["userid"]);
-        $user = getUser($userid);
-        if(!$user){
-            $userErr = "Invalid User";
-        } else {
-            if($user["active"] == 1){
-                $active = true;
+    if (!empty($_GET["page"])) {
+        $page = $_GET["page"];
+    } else {
+        if (!empty($_GET["userid"])) {
+            $userid = test_input($_GET["userid"]);
+            $user = getUser($userid);
+            if(!$user){
+                $userErr = "Invalid User";
             } else {
-                $active = false;
+                if($user["active"] == 1){
+                    $active = true;
+                } else {
+                    $active = false;
+                }
+                $permLevel = (int) $user["permission_level"];
             }
-            $permLevel = (int) $user["permission_level"];
+        }
+        if (!empty($_GET["success"])) {
+            $msg = "User updated.";
         }
     }
-    if (!empty($_GET["success"])) {
-        $msg = "User updated.";
-    }
+
 
 } else if($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (empty($_POST["userid"])) {
-        $userErr = "User is required";
+    if (!empty($_POST["task"])) {
+        $taskUUID = $_POST["task"];
+        $page = $_POST["page"];
+        $res = setDeleteTask($taskUUID, false);
     } else {
-        $userid = test_input($_POST["userid"]);
-    }
-
-    if (empty($_POST["perm_level"])) {
-        $permLevel = 0;
-    } else {
-        $permLevel = (int) test_input($_POST["perm_level"]);
-    }
-
-    if (empty($_POST["active"])) {
-        $active = false;
-    } else {
-        $active = (bool) test_input($_POST["active"]);
-    }
-
-    if (!$userErr){
-        if($userid == $uuid){
-            $msg = "As a failsafe you cannot update your self.";
+        if (empty($_POST["userid"])) {
+            $userErr = "User is required";
         } else {
-            $res = patchUser($userid, $permLevel, $active);
-            if($res){
-                header( "refresh:1;url=./manage.php?userid=" . $userid . "&success=true");
-            } else {
-                $msg = "Failed to update user, try again later.";
-            }
+            $userid = test_input($_POST["userid"]);
         }
 
+        if (empty($_POST["perm_level"])) {
+            $permLevel = 0;
+        } else {
+            $permLevel = (int) test_input($_POST["perm_level"]);
+        }
+
+        if (empty($_POST["active"])) {
+            $active = false;
+        } else {
+            $active = (bool) test_input($_POST["active"]);
+        }
+
+        if (!$userErr){
+            if($userid == $uuid){
+                $msg = "As a failsafe you cannot update your self.";
+            } else {
+                $res = patchUser($userid, $permLevel, $active);
+                if($res){
+                    header( "refresh:1;url=./manage.php?userid=" . $userid . "&success=true");
+                } else {
+                    $msg = "Failed to update user, try again later.";
+                }
+            }
+
+        }
     }
 }
 
@@ -96,7 +108,7 @@ function test_input($data) {
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="homepage.php">Home</a>
+        <a class="navbar-brand" href="./homepage.php">Home</a>
         <?php
         if($permissionLevel >= 1){
             echo '<a class="navbar-brand" href="tasks/edit_task.php">Create Task</a>';
@@ -139,14 +151,32 @@ function test_input($data) {
                     <div class="mb-md-5 mt-md-4 pb-5">
                         <ul class="nav nav-tabs" id="myTab" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="user-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="true">Users</button>
+                                <?php
+                                if($page == "tasks"){
+                                    echo '<button class="nav-link" id="user-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">Users</button>';
+                                } else {
+                                    echo '<button class="nav-link active" id="user-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="true">Users</button>';
+                                }
+                                ?>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="task-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab" aria-controls="tasks" aria-selected="false">Tasks</button>
+                                <?php
+                                if($page == "tasks"){
+                                    echo '<button class="nav-link active" id="task-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab" aria-controls="tasks" aria-selected="true">Tasks</button>';
+                                } else {
+                                    echo '<button class="nav-link" id="task-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab" aria-controls="tasks" aria-selected="false">Tasks</button>';
+                                }
+                                ?>
                             </li>
                         </ul>
                         <div class="tab-content" id="myTabContent">
-                            <div class="tab-pane fade show active" id="users" role="tabpanel" aria-labelledby="user-tab">
+                            <?php
+                            if($page == "tasks"){
+                                echo '<div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="user-tab">';
+                            } else {
+                                echo '<div class="tab-pane fade show active" id="users" role="tabpanel" aria-labelledby="user-tab">';
+                            }
+                            ?>
                                 <h2 class="fw-bold mb-2 text-uppercase">Edit Users</h2>
                                 <p class="text-white-50 mb-5">Select a user bellow to edit</p>
                                 <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
@@ -239,11 +269,37 @@ function test_input($data) {
                                     }
                                     ?>
                                     <button class="btn btn-outline-light btn-lg px-5" type="submit" name="submit">Update</button>
+                                    <br>
+                                    <a href="./register.php">Register a new user.</a>
                                 </form>
                             </div>
-                            <div class="tab-pane fade" id="tasks" role="tabpanel" aria-labelledby="tasks-tab">
-                                <h2 class="fw-bold mb-2 text-uppercase">Edit Tasks</h2>
-                                <p class="text-white-50 mb-5">Select a task bellow to edit</p>
+                            <?php
+                            if($page == "tasks"){
+                                echo '<div class="tab-pane fade show active" id="tasks" role="tabpanel" aria-labelledby="tasks-tab">';
+                            } else {
+                                echo '<div class="tab-pane fade" id="tasks" role="tabpanel" aria-labelledby="tasks-tab">';
+                            }
+                            ?>
+                                <h2 class="fw-bold mb-2 text-uppercase">Un-delete Tasks</h2>
+                                <p class="text-white-50 mb-5">Any deleted tasks will be shown here and can be un-deleted</p>
+                                <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+                                <div class="form-outline form-white form-floating mb-4">
+                                    <select class="form-select form-control-lg" id="typeTaskX" name="task">
+                                        <option disabled selected value> -- select an option -- </option>
+                                        <?php
+                                        $tasks = getTasks();
+                                        foreach($tasks as $key => $task){
+                                            echo $task["deleted"];
+                                            if($task["deleted"] == false) continue;
+                                            echo '<option value="' . $key . '">' . $task["title"] . '</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                    <input type="hidden" name="page" value="tasks">
+                                    <br>
+                                    <button class="btn btn-outline-light btn-lg px-5" type="submit" name="submit">Un-delete</button>
+                                </div>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -252,3 +308,4 @@ function test_input($data) {
         </div>
     </div>
 </div>
+</body>

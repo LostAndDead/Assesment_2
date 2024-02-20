@@ -1,11 +1,23 @@
 <?php
-
 require "../utils/sql.php";
 
 session_start();
 
+$loggedIn = false;
+$uuid = "";
+$permissionLevel = 0;
+
 if(!empty($_SESSION["uuid"])){
-    header("Location: ./homepage.php");
+    $loggedIn = true;
+    $uuid = $_SESSION["uuid"];
+    $permissionLevel = getPermissionLevel($uuid);
+    if($permissionLevel < 2){
+        header("Location: ./homepage.php");
+    }
+}
+
+if(empty($_SESSION["uuid"])){
+    header("Location: ./login.php");
 }
 
 $email = $username = $password = $passwordConfirm = "";
@@ -42,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if(!$msg && !$usernameErr && !$emailErr && !$passwordErr && !$passwordConfirmErr){
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-        $result = createUser($username, $email, $passwordHash, false);
+        $result = createUser($username, $email, $passwordHash, true);
         switch ($result){
             case "Duplicate": {
                 $emailErr = "Email or username is already in use";
@@ -50,8 +62,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 break;
             }
             case "Worked": {
-                $msg = "User created, you will be redirected to login.";
-                header( "refresh:3;url=login.php?email=" . $email );
+                $msg = "User created. Page will refresh in a moment to create another user.";
+                header( "refresh:3;url=register.php");
                 break;
             }
             case "shrug": {
@@ -83,11 +95,29 @@ function test_input($data) {
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="homepage.php">Home</a>
+        <a class="navbar-brand" href="./homepage.php">Home</a>
+        <?php
+        if($permissionLevel >= 1){
+            echo '<a class="navbar-brand" href="tasks/edit_task.php">Create Task</a>';
+        }
+        if($permissionLevel >= 2){
+            echo '<a class="navbar-brand" href="manage.php">Manage</a>';
+
+        }
+        ?>
         <div class="collapse navbar-collapse justify-content-end">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="login.php">Login</a>
+                    <?php
+                    if($loggedIn){
+                        echo '<a class="nav-link" href="password_reset.php">Change Password</a>';
+                        echo '</li>';
+                        echo '<li class="nav-item">';
+                        echo '<a class="nav-link" href="logout.php">Logout</a>';
+                    } else {
+                        echo '<a class="nav-link" href="login.php">Login</a>';
+                    }
+                    ?>
                 </li>
             </ul>
         </div>
@@ -101,7 +131,7 @@ function test_input($data) {
                 <div class="card-body p-3 text-center">
                     <div class="mb-md-5 mt-md-4 pb-5">
                         <h2 class="fw-bold mb-2 text-uppercase">Register</h2>
-                        <p class="text-white-50 mb-5">Please enter your details to register.</p>
+                        <p class="text-white-50 mb-5">Please enter the details of the user to register, they will be required to change their password on first login.</p>
                         <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
                             <div class="form-outline form-white form-floating mb-4">
                                 <input type="text" id="typeUsernameX" name="username" class="form-control form-control-lg" placeholder="username" value="<?php echo $username;?>" />
