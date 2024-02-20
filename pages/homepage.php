@@ -11,6 +11,10 @@ if(!empty($_SESSION["uuid"])){
     $loggedIn = true;
     $uuid = $_SESSION["uuid"];
     $permissionLevel = getPermissionLevel($uuid);
+    $passwordChange = getPasswordChange($uuid);
+    if($passwordChange){
+        header("Location: ./password_reset.php");
+    }
 }
 
 if(!$loggedIn){
@@ -69,48 +73,64 @@ if(!$loggedIn){
             <div class="card bg-dark text-white" style="border-radius: 1rem;">
                 <div class="card-body p-3 text-center">
                     <?php
-                       echo '<h1>Welcome ' . getUsername($uuid) . '</h1>';
-                       switch ($permissionLevel){
-                           case 0: {
-                               echo '<h2>You are a Guest</h2>';
-                               break;
-                           }
-                           case 1: {
-                               echo '<h2>You are a User</h2>';
-                               break;
-                           }
-                           case 2: {
-                               echo '<h2>You are an Admin</h2>';
-                               break;
-                           }
-                       }
+                       echo '<h2> Welcome ' . getUsername($uuid) . ', here are your tasks.</h2>'
                     ?>
-                    <table class="table table-dark">
-                        <thead>
-                        <tr>
-                            <th scope="col">Task Title</th>
-                            <th scope="col">Content</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Owner</th>
-                            <th scope="col">Completion Date</th>
-                            <th scope="col">Controls</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php
-                        $tasks = getTasks();
+                    <div class="row">
+                    <?php
+                    $tasks = getUsersTasks($uuid, false);
+                    if($tasks) printTasks($tasks, $uuid, $permissionLevel);
+
+                    $tasks = getUsersTasks($uuid, true);
+                    if($tasks) printTasks($tasks, $uuid, $permissionLevel);
+
+                    function printTasks($tasks, $uuid, $permissionLevel){
                         foreach ($tasks as $key => $task){
-                            echo '<tr>';
-                            echo '<th scope="row">' . $task["title"] .'</th>';
-                            echo '<th>' . $task["content"] .'</th>';
-                            echo '<th>' . statusIntToStr($task["status"]) .'</th>';
-                            echo '<th>' . getUsername($task["owner"]) .'</th>';
-                            echo '<th>' . $task["completion_date"] .'</th>';
-                            echo '</tr>';
+                            //Card Headers
+                            echo '<div class="col-sm-6">';
+                            $bgType = "";
+                            switch ($task["priority"]){
+                                default: {
+                                    echo '<div class="card text-white bg-danger mb-3">';
+                                    $bgType = "bg-danger";
+                                    break;
+                                }
+                                case 2: {
+                                    echo '<div class="card text-white bg-success mb-3">';
+                                    $bgType = "bg-success";
+                                    break;
+                                }
+                                case 3: {
+                                    echo '<div class="card text-white bg-secondary mb-3">';
+                                    $bgType = "bg-secondary";
+                                    break;
+                                }
+                            }
+                            echo '<div class="card-body">';
+                            //Card title
+                            echo '<h5 class="card-title justify-content-center">' . $task["title"] . "</h5>";
+                            //Card Text
+                            echo '<p class="card-text justify-content-center">' . $task["content"] . '</p>';
+                            echo '</div>';
+                            //List items for status, owner and completion date
+                            echo '<ul class="list-group list-group-flush">';
+                            echo '<li class="list-group-item '. $bgType. ' text-white text-start">Status: '. statusIntToStr($task["status"]) .'</li>';
+                            echo '<li class="list-group-item '. $bgType. ' text-white text-start">Owner: '. getUsername($task["owner"]) .'</li>';
+                            echo '<li class="list-group-item '. $bgType. ' text-white text-start">Completion Date: '. $task["completion_date"] .'</li>';
+                            echo '</ul>';
+                            //Edit button
+                            if($uuid == $task["owner"] || $permissionLevel >= 2) {
+                                echo '<div class="card-body">';
+                                echo '<a href="./tasks/edit_task.php?method=edit&uuid=' . $key . '" class="btn btn-primary mx-1">✏️</a>';
+                                echo '<a href="./tasks/delete_task.php?uuid=' . $key . '" class="btn btn-danger mx-1">🗑️</a>';
+                                echo '</div>';
+                            }
+                            //Card closers
+                            echo '</div>';
+                            echo '</div>';
                         }
-                        ?>
-                        </tbody>
-                    </table>
+                    }
+                    ?>
+                    </div>
                 </div>
             </div>
         </div>

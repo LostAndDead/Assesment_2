@@ -19,8 +19,8 @@ if(empty($_SESSION["uuid"])){
     header("Location: ./login.php");
 }
 
-$title = $content = $status = $date = $msg = "";
-$titleErr = $contentErr = $statusErr = $dateErr = "";
+$title = $content = $status = $date = $msg = $prio = "";
+$titleErr = $contentErr = $statusErr = $dateErr = $prioErr = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($_POST["method"])){
@@ -59,6 +59,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $status = test_input($_POST["status"]);
     }
 
+    if (empty($_POST["prio"])) {
+        $prioErr = "Priority is required";
+    } else {
+        $prio= test_input($_POST["prio"]);
+    }
+
     if (empty($_POST["date"])) {
         $dateErr = "Date is required";
     } else {
@@ -72,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if($method == "create"){
             $statusID = statusStrToInt($status);
             $completionDate = strtotime($date);
-            $result = createTask($title, $content, $statusID, $completionDate, $uuid);
+            $result = createTask($title, $content, $statusID, $prio, $completionDate, $uuid);
 
             if($result){
                 $msg = "Task created, redirecting to homepage...";
@@ -83,7 +89,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }else if ($method == "edit"){
             $statusID = statusStrToInt($status);
             $completionDate = strtotime($date);
-            $result = updateTask($taskUUID, $title, $content, $statusID, $completionDate, $uuid);
+            $result = updateTask($taskUUID, $title, $content, $statusID, $prio, $completionDate, $uuid);
 
             if($result){
                 $msg = "Task updated, redirecting to homepage...";
@@ -111,6 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $content = $task[$taskUUID]["content"];
                     $status = statusIntToStr($task[$taskUUID]["status"]);
                     $date = $task[$taskUUID]["completion_date"];
+                    $prio = $task[$taskUUID]["priority"];
                 }
 
                 break;
@@ -261,6 +268,40 @@ function test_input($data) {
                                 ?>
                             </div>
                             <div class="form-outline form-white form-floating mb-4">
+                                <select class="form-select form-control-lg" id="typePrioX" name="prio">
+                                    <?php
+                                    echo $prio;
+                                    switch ($prio){
+                                        case "1":{
+                                            echo '<option value=1 selected>High Priority</option>';
+                                            echo '<option value=2>Standard Priority</option>';
+                                            echo '<option value=3>Low Priority</option>';
+                                            break;
+                                        }
+                                        default:{
+                                            echo '<option value=1>High Priority</option>';
+                                            echo '<option value=2 selected>Standard Priority</option>';
+                                            echo '<option value=3>Low Priority</option>';
+                                            break;
+                                        }
+                                        case "3":{
+                                            echo '<option value=1>High Priority</option>';
+                                            echo '<option value=2>Standard Priority</option>';
+                                            echo '<option value=3 selected>Low Priority</option>';
+                                            break;
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                                <?php
+                                if($prioErr){
+                                    echo '<label class="form-label-error" for="typePrioX">' . $prioErr . '</label>';
+                                }else {
+                                    echo '<label class="form-label" for="typePrioX">Priority</label>';
+                                }
+                                ?>
+                            </div>
+                            <div class="form-outline form-white form-floating mb-4">
                                 <input type="date" id="typeDateX" name="date" class="form-control form-control-lg" placeholder="date" value="<?php echo $date;?>"/>
                                 <?php
                                 if($dateErr){
@@ -270,8 +311,8 @@ function test_input($data) {
                                 }
                                 ?>
                             </div>
-
                             <?php
+                            //TODO Add admin only user change option
                                 if($method == "edit"){
                                     echo '<input type="hidden" name="method" value="edit">';
                                     echo '<input type="hidden" name="uuid" value="' . $taskUUID . '">';

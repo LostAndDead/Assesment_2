@@ -51,7 +51,7 @@ function getWriteConn(){
  */
 function getTasks(){
     $conn = getReadonlyConn();
-    $sql = "SELECT * FROM assesment_2.tasks;";
+    $sql = "SELECT * FROM assesment_2.tasks AND deleted = false ORDER BY priority;";
     $result = $conn->query($sql);
 
     $output = array();
@@ -63,7 +63,8 @@ function getTasks(){
                 "content" => $row["content"],
                 "status" => $row["status"],
                 "owner" => $row["owner"],
-                "completion_date" => $row["completion_date"]
+                "completion_date" => $row["completion_date"],
+                "priority" => $row["priority"]
             ];
             $output[$row["uuid"]] = $data;
         }
@@ -71,6 +72,83 @@ function getTasks(){
 
     $conn->close();
     return $output;
+}
+
+/**
+ *
+ * Fetch a list of all the tasks from the database who do or dont belong to a user
+ *
+ * @param string $uuid The users who tasks to get
+ * @param bool $not True for not users tasks, False for users tasks
+ *
+ * @return array
+ *
+ */
+function getUsersTasks($uuid, $not){
+    $conn = getReadonlyConn();
+    if($not){
+        $sql = "SELECT * FROM assesment_2.tasks where owner <> ? AND deleted = false ORDER BY priority;";
+    } else {
+        $sql = "SELECT * FROM assesment_2.tasks where owner = ? AND deleted = false ORDER BY priority;";
+    }
+
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $uuid);
+    $sqlStatement->execute();
+
+    $output = array();
+
+    try {
+        $sqlStatement->execute();
+        $result = $sqlStatement->get_result();
+        if($result->num_rows > 0){
+            while ($row = $result->fetch_assoc()){
+                $data = [
+                    "title" => $row["title"],
+                    "content" => $row["content"],
+                    "status" => $row["status"],
+                    "owner" => $row["owner"],
+                    "completion_date" => $row["completion_date"],
+                    "priority" => $row["priority"]
+                ];
+                $output[$row["uuid"]] = $data;
+            }
+        } else {
+            return null;
+        }
+    } catch (mysqli_sql_exception $exception) {
+        return null;
+    }
+
+    $conn->close();
+    return $output;
+}
+
+/**
+ *
+ * Delete a task (or un delete it)
+ *
+ * @param string $taskUUID The uuid of the task to delete
+ * @param string $uuid The uuid of the user who is deleting it
+ * @param bool $state The state for the task, deleted or not
+ *
+ * @return bool True for delete False for error
+ *
+ */
+function setDeleteTask($taskUUID, $state){
+    $conn = getWriteConn();
+    $sql = "UPDATE assesment_2.tasks SET deleted = ? WHERE UUID = ?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("is", $state, $taskUUID);
+    try {
+        $sqlStatement->execute();
+        $conn->close();
+        return true;
+    } catch (mysqli_sql_exception $exception) {
+        $conn->close();
+        return false;
+    }
+
 }
 
 /**
@@ -155,8 +233,11 @@ function getUser($uuid){
         $sqlStatement->execute();
         $result = $sqlStatement->get_result();
         if($result->num_rows > 0){
-            return $result->fetch_assoc();
+            $res = $result->fetch_assoc();
+            $conn->close();
+            return $res;
         } else {
+            $conn->close();
             return null;
         }
     } catch (mysqli_sql_exception $exception) {
@@ -181,8 +262,10 @@ function patchUser($uuid, $permLevel, $active){
     $sqlStatement->bind_param("sis", $permLevel, $active, $uuid);
     try {
         $sqlStatement->execute();
+        $conn->close();
         return true;
     } catch (mysqli_sql_exception $exception) {
+        $conn->close();
         return false;
     }
 }
@@ -206,13 +289,16 @@ function createUser($username, $email, $password, $passwordReset){
     $sqlStatement->bind_param("sssb", $username, $email, $password, $passwordReset);
     try {
         $sqlStatement->execute();
+        $conn->close();
         return "Worked";
     } catch (mysqli_sql_exception $exception) {
         $code = $exception->getCode();
         if($code == 1062){
+            $conn->close();
             return "Duplicate";
         }
     }
+    $conn->close();
     return "shrug";
 }
 
@@ -236,11 +322,14 @@ function checkLogin($email, $password) {
         $result = $sqlStatement->get_result();
         if($result->num_rows > 0){
             $row = $result->fetch_assoc();
+            $conn->close();
             return password_verify($password, $row["password_hash"]);
         } else {
+            $conn->close();
             return false;
         }
     } catch (mysqli_sql_exception $exception) {
+        $conn->close();
         return false;
     }
 }
@@ -264,11 +353,14 @@ function getUUID($email) {
         $result = $sqlStatement->get_result();
         if($result->num_rows > 0){
             $row = $result->fetch_assoc();
+            $conn->close();
             return $row["uuid"];
         } else {
+            $conn->close();
             return false;
         }
     } catch (mysqli_sql_exception $exception) {
+        $conn->close();
         return false;
     }
 }
@@ -292,11 +384,45 @@ function getPermissionLevel($uuid){
         $result = $sqlStatement->get_result();
         if($result->num_rows > 0){
             $row = $result->fetch_assoc();
+            $conn->close();
             return $row["permission_level"];
         } else {
+            $conn->close();
             return false;
         }
     } catch (mysqli_sql_exception $exception) {
+        $conn->close();
+        return false;
+    }
+}
+
+/**
+ *
+ * Gets if the user needs to change their password from their UUID
+ *
+ * @param string $uuid The UUID to query
+ *
+ * @return int
+ *
+ */
+function getPasswordChange($uuid){
+    $conn = getReadonlyConn();
+    $sql = "SELECT password_reset FROM assesment_2.users WHERE uuid = ?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $uuid);
+    try {
+        $sqlStatement->execute();
+        $result = $sqlStatement->get_result();
+        if($result->num_rows > 0){
+            $row = $result->fetch_assoc();
+            $conn->close();
+            return $row["password_reset"];
+        } else {
+            $conn->close();
+            return false;
+        }
+    } catch (mysqli_sql_exception $exception) {
+        $conn->close();
         return false;
     }
 }
@@ -320,11 +446,14 @@ function getUsername($uuid){
         $result = $sqlStatement->get_result();
         if($result->num_rows > 0){
             $row = $result->fetch_assoc();
+            $conn->close();
             return $row["username"];
         } else {
+            $conn->close();
             return false;
         }
     } catch (mysqli_sql_exception $exception) {
+        $conn->close();
         return false;
     }
 }
@@ -346,8 +475,10 @@ function changePassword($uuid, $password){
     $sqlStatement->bind_param("ss", $password, $uuid);
     try {
         $sqlStatement->execute();
+        $conn->close();
         return true;
     } catch (mysqli_sql_exception $exception) {
+        $conn->close();
         return false;
     }
 }
@@ -359,21 +490,24 @@ function changePassword($uuid, $password){
  * @param string $title The title of the new task
  * @param string $content The content of the new task
  * @param int $status The Status of the new task
+ * @param int $prio The priority of the new task
  * @param int $completionDate The completion date of the new task
  * @param string $uuid The UUID of the user creating the task
  *
  * @return bool True for successful, false for failed
  */
-function createTask($title, $content, $status, $completionDate, $uuid){
+function createTask($title, $content, $status, $prio, $completionDate, $uuid){
     $conn = getWriteConn();
-    $sql = "INSERT INTO assesment_2.tasks (uuid, title, content, status, owner, completion_date) VALUES (uuid(),?,?,?,?,?)";
+    $sql = "INSERT INTO assesment_2.tasks (uuid, title, content, status, priority, owner, completion_date) VALUES (uuid(),?,?,?,?,?,?)";
     $date = date("Y-m-d H:i:s", $completionDate);
     $sqlStatement = $conn->prepare($sql);
-    $sqlStatement->bind_param("ssiss", $title, $content, $status, $uuid, $date);
+    $sqlStatement->bind_param("ssiiss", $title, $content, $status, $prio, $uuid, $date);
     try {
         $sqlStatement->execute();
+        $conn->close();
         return true;
     } catch (mysqli_sql_exception $exception) {
+        $conn->close();
         return false;
     }
 }
@@ -383,26 +517,30 @@ function createTask($title, $content, $status, $completionDate, $uuid){
  * Update a task
  *
  * @param string $taskUUID The UUID of the task to update
- * @param string $title The title of the new task
- * @param string $content The content of the new task
- * @param int $status The Status of the new task
+ * @param string $title The title of the  task
+ * @param string $content The content of the task
+ * @param int $status The Status of the task
+ * @param int $prio The priority of the task
  * @param int $completionDate The completion date of the new task
  * @param string $uuid The UUID of the user creating the task
  *
  * @return bool True for successful, false for failed
  */
-function updateTask($taskUUID, $title, $content, $status, $completionDate, $uuid){
+function updateTask($taskUUID, $title, $content, $status, $prio, $completionDate, $uuid){
     $conn = getWriteConn();
-    $sql = "UPDATE assesment_2.tasks SET title=?, content=?, status=?, owner=?, completion_date=? WHERE uuid=?";
+    $sql = "UPDATE assesment_2.tasks SET title=?, content=?, status=?, priority=?, owner=?, completion_date=? WHERE uuid=?";
     $date = date("Y-m-d H:i:s", $completionDate);
     $sqlStatement = $conn->prepare($sql);
-    $sqlStatement->bind_param("ssisss", $title, $content, $status, $uuid, $date, $taskUUID);
+    $sqlStatement->bind_param("ssiisss", $title, $content, $status, $prio, $uuid, $date, $taskUUID);
     try {
         $sqlStatement->execute();
+        $conn->close();
         return true;
     } catch (mysqli_sql_exception $exception) {
+        $conn->close();
         return false;
     }
+
 }
 
 /**
@@ -431,20 +569,22 @@ function getTask($taskUUID, $userUUID){
                 "content" => $row["content"],
                 "status" => $row["status"],
                 "owner" => $row["owner"],
-                "completion_date" => $row["completion_date"]
+                "completion_date" => $row["completion_date"],
+                "priority" => $row["priority"]
             ];
             $output[$row["uuid"]] = $data;
         }
     } else {
+        $conn->close();
         return null;
     }
     $conn->close();
 
     $perm_level = getPermissionLevel($userUUID);
-    if($userUUID != $output[$taskUUID]["owner"] && $perm_level < 2){
-        return null;
+    if($userUUID == $output[$taskUUID]["owner"] || $perm_level >= 2){
+        return $output;
     }
-    return $output;
+    return null;
 }
 
 /**

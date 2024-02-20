@@ -18,28 +18,10 @@ if(empty($_SESSION["uuid"])){
     header("Location: ./login.php");
 }
 
-$email = $oldPassword = $password = $passwordConfirm = "";
-$msg = $oldPasswordErr = $emailErr = $passwordErr = $passwordConfirmErr = "";
+$password = $passwordConfirm = "";
+$msg = $passwordErr = $passwordConfirmErr = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (empty($_POST["email"])) {
-        $emailErr = "Email is required";
-    } else {
-        $email = test_input($_POST["email"]);
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $emailErr = "Invalid email format";
-        }
-    }
-
-    if (empty($_POST["oldpassword"])) {
-        $oldPasswordErr = "Password is required";
-    } else {
-        $oldPassword = test_input($_POST["oldpassword"]);
-        if(!checkLogin($email, $oldPassword)){
-            $oldPasswordErr = "Invalid Password or Email";
-        }
-    }
-
     if (empty($_POST["password"]) || empty($_POST["password_confirm"])) {
         $passwordErr = "New password is required";
     } else {
@@ -50,22 +32,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    if(!$msg && !$oldPasswordErr && !$emailErr && !$passwordErr && !$passwordConfirmErr){
-        if($oldPassword == $password){
-            $passwordErr = "Password can not be same as old password";
+    if(!$msg && !$passwordErr && !$passwordConfirmErr){
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $res = changePassword($uuid, $passwordHash);
+        $user = getUser($uuid);
+        if($res){
+            $msg = "Password changed, please login again.";
+            session_destroy();
+            header( "refresh:3;url=login.php?email=" . $user["email"] );
         } else {
-            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-            $uuid = getUUID($email);
-            $res = changePassword($uuid, $passwordHash);
-            if($res){
-                $msg = "Password changed, please login again.";
-                session_destroy();
-                header( "refresh:3;url=login.php?email=" . $email );
-            } else {
-                $msg = "Error changing password, please try again.";
-            }
+            $msg = "Error changing password, please try again.";
         }
-
     }
 }
 
@@ -113,30 +90,8 @@ function test_input($data) {
                 <div class="card-body p-3 text-center">
                     <div class="mb-md-5 mt-md-4 pb-5">
                         <h2 class="fw-bold mb-2 text-uppercase">Change Password</h2>
-                        <p class="text-white-50 mb-5">Enter your details and new Password bellow.</p>
+                        <p class="text-white-50 mb-5">Enter your new Password bellow.</p>
                         <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
-                            <div class="form-outline form-white form-floating mb-4">
-                                <input type="email" id="typeEmailX" name="email" class="form-control form-control-lg" placeholder="name@example.com" value="<?php echo $email;?>" />
-                                <?php
-                                if($emailErr){
-                                    echo '<label class="form-label-error" for="typeEmailX">' . $emailErr . '</label>';
-                                }else {
-                                    echo '<label class="form-label" for="typeEmailX">Email</label>';
-                                }
-                                ?>
-                            </div>
-
-                            <div class="form-outline form-white form-floating mb-4">
-                                <input type="password" id="typeOldPasswordX" name="oldpassword" class="form-control form-control-lg" placeholder="password123" value="<?php echo $oldPassword;?>" />
-                                <?php
-                                if($oldPasswordErr){
-                                    echo '<label class="form-label-error" for="typeOldPasswordX">' . $oldPasswordErr . '</label>';
-                                }else {
-                                    echo '<label class="form-label" for="typeEmailX">Old Password</label>';
-                                }
-                                ?>
-                            </div>
-
                             <div class="form-outline form-white form-floating mb-4">
                                 <input type="password" id="typePasswordX" name="password" class="form-control form-control-lg" placeholder="password123" value="<?php echo $password;?>" />
                                 <?php
