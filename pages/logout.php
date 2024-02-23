@@ -1,9 +1,20 @@
 <?php
-    session_start();
+require "../utils/sql.php";
+session_start();
 
-    session_destroy();
+if(!empty($_SESSION["uuid"])){
+    $uuid = $_SESSION["uuid"];
+    $sessionUUID = $_SESSION["session_uuid"];
+    $valid = checkSession($uuid, $sessionUUID);
+    if ($valid) {
+        $loggedIn = true;
+        destroySession($uuid);
+        session_destroy();
+    }
 
-    header( "refresh:2;url=homepage.php");
+}
+
+header( "refresh:2;url=homepage.php");
 ?>
 
 <html lang="en">

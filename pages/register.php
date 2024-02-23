@@ -4,20 +4,28 @@ require "../utils/sql.php";
 session_start();
 
 $loggedIn = false;
-$uuid = "";
+$uuid = -1;
 $permissionLevel = 0;
 
 if(!empty($_SESSION["uuid"])){
-    $loggedIn = true;
     $uuid = $_SESSION["uuid"];
-    $permissionLevel = getPermissionLevel($uuid);
-    if($permissionLevel < 2){
-        header("Location: ./homepage.php");
+    $sessionUUID = $_SESSION["session_uuid"];
+    $valid = checkSession($uuid, $sessionUUID);
+    if ($valid) {
+        $loggedIn = true;
+        $uuid = $_SESSION["uuid"];
+        $permissionLevel = getPermissionLevel($uuid);
+        $passwordChange = getPasswordChange($uuid);
+        if($passwordChange){
+            header("Location: ./password_reset.php");
+        }
     }
+
 }
 
-if(empty($_SESSION["uuid"])){
+if(!$loggedIn){
     header("Location: ./login.php");
+    die();
 }
 
 $email = $username = $password = $passwordConfirm = "";

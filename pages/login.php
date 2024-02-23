@@ -30,6 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $result = checkLogin($email, $password);
         if($result){
             $_SESSION["uuid"] = getUUID($email);
+            $_SESSION["session_uuid"] = password_hash(generateSession(getUUID($email)), PASSWORD_DEFAULT);
             $msg = "Login successful, redirecting...";
             header( "refresh:3;url=homepage.php");
         } else {

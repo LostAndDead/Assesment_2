@@ -4,22 +4,33 @@ require "../../utils/sql.php";
 session_start();
 
 $loggedIn = false;
-$uuid = "";
+$uuid = -1;
 $permissionLevel = 0;
+$taskUUID = -1;
 $method = "";
-$taskUUID = "";
 
 if(!empty($_SESSION["uuid"])){
-    $loggedIn = true;
     $uuid = $_SESSION["uuid"];
-    $permissionLevel = getPermissionLevel($uuid);
+    $sessionUUID = $_SESSION["session_uuid"];
+    $valid = checkSession($uuid, $sessionUUID);
+    if ($valid) {
+        $loggedIn = true;
+        $uuid = $_SESSION["uuid"];
+        $permissionLevel = getPermissionLevel($uuid);
+        $passwordChange = getPasswordChange($uuid);
+        if($passwordChange){
+            header("Location: ./password_reset.php");
+        }
+    }
+
 }
 
-if(empty($_SESSION["uuid"])){
+if(!$loggedIn){
     header("Location: ./login.php");
+    die();
 }
 
-$title = $content = $status = $date = $msg = $prio = "";
+$title = $content = $status = $date = $msg = $prio = $owner = "";
 $titleErr = $contentErr = $statusErr = $dateErr = $prioErr = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -65,6 +76,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $prio= test_input($_POST["prio"]);
     }
 
+    if (empty($_POST["owner"]) || $permissionLevel < 2) {
+        $owner = test_input($uuid);
+    } else {
+        $owner = test_input($_POST["owner"]);
+    }
+
     if (empty($_POST["date"])) {
         $dateErr = "Date is required";
     } else {
@@ -89,7 +106,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }else if ($method == "edit"){
             $statusID = statusStrToInt($status);
             $completionDate = strtotime($date);
-            $result = updateTask($taskUUID, $title, $content, $statusID, $prio, $completionDate, $uuid);
+            $result = updateTask($taskUUID, $title, $content, $statusID, $prio, $completionDate, $owner);
 
             if($result){
                 $msg = "Task updated, redirecting to homepage...";
@@ -102,6 +119,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 } else if($_SERVER["REQUEST_METHOD"] == "GET") {
     if (empty($_GET["method"])){
         $method = "create";
+        if (empty($_GET["owner"]) || $permissionLevel < 2) {
+            $owner = test_input($uuid);
+        } else {
+            $owner = test_input($_GET["owner"]);
+        }
     } else {
         switch ($_GET["method"]){
             case "edit": {
@@ -118,6 +140,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $status = statusIntToStr($task[$taskUUID]["status"]);
                     $date = $task[$taskUUID]["completion_date"];
                     $prio = $task[$taskUUID]["priority"];
+                    $owner = $task[$taskUUID]["owner"];
                 }
 
                 break;
@@ -277,6 +300,24 @@ function test_input($data) {
                                 }
                                 ?>
                             </div>
+                            <?php
+                            if($permissionLevel >= 2){
+                                echo '<div class="form-outline form-white form-floating mb-4">';
+                                echo '<select class="form-select form-control-lg" id="typeOwnerX" name="owner">';
+                                $users = getAllUsers();
+                                foreach ($users as $key => $user){
+                                    if ($key == $owner){
+                                        echo '<option value=' . $key . ' selected>' . $user["username"] . '</option>';
+                                    } else {
+                                        echo '<option value=' . $key . '>' . $user["username"] . '</option>';
+                                    }
+                                }
+
+                                echo '</select>';
+                                echo '<label class="form-label" for="typeOwnerX">Owner</label>';
+                                echo '</div>';
+                            }
+                            ?>
                             <div class="form-outline form-white form-floating mb-4">
                                 <select class="form-select form-control-lg" id="typePrioX" name="prio">
                                     <?php

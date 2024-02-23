@@ -1,17 +1,7 @@
 <?php
 
 require "../utils/sql.php";
+session_start();
 
-echo "Tasks:<br>";
-
-echo json_encode(getTasks()) . "<br>";
-
-echo "<br>Users:<br>";
-
-echo json_encode(getAllUsers()) . "<br>";
-
-echo "<br>Admin:<br>";
-
-echo json_encode(getUser("admin@admin.com")) . "<br>";
 
 ?>

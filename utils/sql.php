@@ -590,6 +590,57 @@ function getTask($taskUUID, $userUUID){
 
 /**
  *
+ * Generates a new session uuid for a user and returns it
+ *
+ * @param string $uuid the uuid for the use to generate the session for
+ *
+ * @return string The new session id for the user
+ */
+function generateSession($uuid){
+    $conn = getWriteConn();
+    $sql = "UPDATE assesment_2.users set session_uuid = uuid() WHERE uuid = ?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $uuid);
+    $sqlStatement->execute();
+    $conn->close();
+
+    $user = getUser($uuid);
+    return $user["session_uuid"];
+}
+
+function checkSession($uuid, $session){
+    $conn = getReadonlyConn();
+    $sql = "SELECT session_uuid FROM assesment_2.users WHERE uuid=?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $uuid);
+    try {
+        $sqlStatement->execute();
+        $result = $sqlStatement->get_result();
+        if($result->num_rows > 0){
+            $row = $result->fetch_assoc();
+            $conn->close();
+            return password_verify($row["session_uuid"], $session);
+        } else {
+            $conn->close();
+            return false;
+        }
+    } catch (mysqli_sql_exception $exception) {
+        $conn->close();
+        return false;
+    }
+}
+
+function destroySession($uuid){
+    $conn = getWriteConn();
+    $sql = "UPDATE assesment_2.users set session_uuid = -1 WHERE uuid = ?";
+    $sqlStatement = $conn->prepare($sql);
+    $sqlStatement->bind_param("s", $uuid);
+    $sqlStatement->execute();
+    $conn->close();
+}
+
+/**
+ *
  * Convert a status string to its int equivalent
  *
  * @param string $status Status to change
