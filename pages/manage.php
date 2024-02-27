@@ -28,6 +28,11 @@ if(!$loggedIn){
     die();
 }
 
+if($permissionLevel < 2) {
+    header("Location ./homepage.php");
+    die();
+}
+
 $msg = $userErr = $permissionErr = "";
 $userid = $active = $permLevel = "";
 $page = "users";
@@ -300,7 +305,7 @@ function test_input($data) {
                                         $tasks = getTasks();
                                         foreach($tasks as $key => $task){
                                             echo $task["deleted"];
-                                            if($task["deleted"] == false) continue;
+                                            if(!$task["deleted"]) continue;
                                             echo '<option value="' . $key . '">' . $task["title"] . '</option>';
                                         }
                                         ?>

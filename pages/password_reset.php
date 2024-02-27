@@ -16,9 +16,6 @@ if(!empty($_SESSION["uuid"])){
         $uuid = $_SESSION["uuid"];
         $permissionLevel = getPermissionLevel($uuid);
         $passwordChange = getPasswordChange($uuid);
-        if($passwordChange){
-            header("Location: ./password_reset.php");
-        }
     }
 
 }
@@ -26,10 +23,6 @@ if(!empty($_SESSION["uuid"])){
 if(!$loggedIn){
     header("Location: ./login.php");
     die();
-}
-
-if(empty($_SESSION["uuid"])){
-    header("Location: ./login.php");
 }
 
 $password = $passwordConfirm = "";

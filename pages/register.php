@@ -28,6 +28,11 @@ if(!$loggedIn){
     die();
 }
 
+if($permissionLevel < 1) {
+    header("Location ./homepage.php");
+    die();
+}
+
 $email = $username = $password = $passwordConfirm = "";
 $msg = $usernameErr = $emailErr = $passwordErr = $passwordConfirmErr = "";
 

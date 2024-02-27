@@ -29,6 +29,11 @@ if(!$loggedIn){
     die();
 }
 
+if($permissionLevel < 1) {
+    header("Location ./homepage.php");
+    die();
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!empty($_POST["uuid"])){
         $taskUUID = test_input($_POST["uuid"]);

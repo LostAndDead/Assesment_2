@@ -264,7 +264,7 @@ function createUser(string $username, string $email, string $password, bool $pas
     $conn = getWriteConn();
     $sql = "INSERT INTO assesment_2.users (uuid, username, email, password_hash, password_reset) VALUES (uuid(), ?, ?, ?, ?);";
     $sqlStatement = $conn->prepare($sql);
-    $sqlStatement->bind_param("sssb", $username, $email, $password, $passwordReset);
+    $sqlStatement->bind_param("sssi", $username, $email, $password, $passwordReset);
     try {
         $sqlStatement->execute();
         $conn->close();
@@ -450,7 +450,7 @@ function getUsername(string $uuid){
 function changePassword(string $uuid, string $password): bool
 {
     $conn = getWriteConn();
-    $sql = "UPDATE assesment_2.users SET password_hash = ? WHERE UUID = ?";
+    $sql = "UPDATE assesment_2.users SET password_hash = ?, password_reset=false WHERE UUID = ?";
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("ss", $password, $uuid);
     try {
