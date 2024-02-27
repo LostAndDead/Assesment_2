@@ -264,10 +264,10 @@ function test_input($data) {
                                         }
                                         ?>
                                     </div>
-                                    <div class="form-outline form-white form-floating mb-4">
-                                        <div class="custom-control custom-switch">
-                                            <input type="checkbox" class="custom-control-input" id="active" name="active"<?php echo $active ? ' checked' : ''; ?>>
-                                            <label class="custom-control-label" for="customSwitch1">Active</label>
+                                    <div class="form-outline form-white form-floating mb-4 d-flex justify-content-center">
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" class="form-check-input" id="active" name="active"<?php echo $active ? ' checked' : ''; ?>>
+                                            <label class="form-check-label" for="active">Active</label>
                                         </div>
                                     </div>
                                     <?php

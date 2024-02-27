@@ -7,7 +7,8 @@
  * @return mysqli
  *
  */
-function getReadonlyConn(){
+function getReadonlyConn(): mysqli
+{
     $server_name = "localhost";
     $username = "program_r";
     $password = "program_r";
@@ -28,7 +29,8 @@ function getReadonlyConn(){
  * @return mysqli
  *
  */
-function getWriteConn(){
+function getWriteConn(): mysqli
+{
     $server_name = "localhost";
     $username = "program";
     $password = "program";
@@ -49,7 +51,8 @@ function getWriteConn(){
  * @return array
  *
  */
-function getTasks(){
+function getTasks(): array
+{
     $conn = getReadonlyConn();
     $sql = "SELECT * FROM assesment_2.tasks ORDER BY priority;";
     $result = $conn->query($sql);
@@ -77,7 +80,7 @@ function getTasks(){
 
 /**
  *
- * Fetch a list of all the tasks from the database who do or dont belong to a user
+ * Fetch a list of all the tasks from the database who do or don't belong to a user
  *
  * @param string $uuid The users who tasks to get
  * @param bool $not True for not users tasks, False for users tasks
@@ -85,7 +88,8 @@ function getTasks(){
  * @return array
  *
  */
-function getUsersTasks($uuid, $not){
+function getUsersTasks(string $uuid, bool $not): ?array
+{
     $conn = getReadonlyConn();
     if($not){
         $sql = "SELECT * FROM assesment_2.tasks where owner <> ? AND deleted = false ORDER BY priority;";
@@ -130,13 +134,13 @@ function getUsersTasks($uuid, $not){
  * Delete a task (or un delete it)
  *
  * @param string $taskUUID The uuid of the task to delete
- * @param string $uuid The uuid of the user who is deleting it
  * @param bool $state The state for the task, deleted or not
  *
  * @return bool True for delete False for error
  *
  */
-function setDeleteTask($taskUUID, $state){
+function setDeleteTask(string $taskUUID, bool $state): bool
+{
     $conn = getWriteConn();
     $sql = "UPDATE assesment_2.tasks SET deleted = ? WHERE UUID = ?";
     $sqlStatement = $conn->prepare($sql);
@@ -160,7 +164,8 @@ function setDeleteTask($taskUUID, $state){
  * @return array
  *
  */
-function getAllUsers(){
+function getAllUsers(): array
+{
     $conn = getReadonlyConn();
     $sql = "SELECT uuid, username, password_reset, permission_level, email, active FROM assesment_2.users;";
     $result = $conn->query($sql);
@@ -186,37 +191,6 @@ function getAllUsers(){
 
 /**
  *
- * Fetches all the disabled users from the database
- * Password data is omitted
- *
- * @return array
- *
- */
-function getDisabledUsers(){
-    $conn = getReadonlyConn();
-    $sql = "SELECT uuid, username, password_reset, permission_level, email FROM assesment_2.users WHERE active = false;";
-    $result = $conn->query($sql);
-
-    $output = array();
-
-    if($result->num_rows > 0){
-        while ($row = $result->fetch_assoc()){
-            $data = [
-                "username" => $row["username"],
-                "email" => $row["email"],
-                "password_reset" => $row["password_reset"],
-                "permission_level" => $row["permission_level"],
-            ];
-            $output[$row["uuid"]] = $data;
-        }
-    }
-
-    $conn->close();
-    return $output;
-}
-
-/**
- *
  * Gets a users full data by their email
  *
  * @param string $uuid The uuid to query the user for.
@@ -224,7 +198,8 @@ function getDisabledUsers(){
  * @return array
  *
  */
-function getUser($uuid){
+function getUser(string $uuid): ?array
+{
     $conn = getReadonlyConn();
     $sql = "SELECT * FROM assesment_2.users WHERE uuid = ?;";
     $sqlStatement = $conn->prepare($sql);
@@ -256,7 +231,8 @@ function getUser($uuid){
  *
  * @return bool
  */
-function patchUser($uuid, $permLevel, $active){
+function patchUser(string $uuid, int $permLevel, bool $active): bool
+{
     $conn = getWriteConn();
     $sql = "UPDATE assesment_2.users SET permission_level = ?, active = ? WHERE UUID = ?";
     $sqlStatement = $conn->prepare($sql);
@@ -283,7 +259,8 @@ function patchUser($uuid, $permLevel, $active){
  * @return string The result as a string (Worked | Duplicate | shrug)
  *
  */
-function createUser($username, $email, $password, $passwordReset){
+function createUser(string $username, string $email, string $password, bool $passwordReset): string
+{
     $conn = getWriteConn();
     $sql = "INSERT INTO assesment_2.users (uuid, username, email, password_hash, password_reset) VALUES (uuid(), ?, ?, ?, ?);";
     $sqlStatement = $conn->prepare($sql);
@@ -313,9 +290,10 @@ function createUser($username, $email, $password, $passwordReset){
  * @return bool True for valid, False for invalid or error
  *
  */
-function checkLogin($email, $password) {
+function checkLogin(string $email, string $password): bool
+{
     $conn = getReadonlyConn();
-    $sql = "SELECT password_hash FROM assesment_2.users WHERE email = ? AND active = true;";
+    $sql = "SELECT password_hash FROM assesment_2.users WHERE email = ?";
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("s", $email);
     try {
@@ -344,7 +322,7 @@ function checkLogin($email, $password) {
  * @return string
  *
  */
-function getUUID($email) {
+function getUUID(string $email) {
     $conn = getReadonlyConn();
     $sql = "SELECT uuid FROM assesment_2.users WHERE email = ?";
     $sqlStatement = $conn->prepare($sql);
@@ -375,7 +353,7 @@ function getUUID($email) {
  * @return int
  *
  */
-function getPermissionLevel($uuid){
+function getPermissionLevel(string $uuid){
     $conn = getReadonlyConn();
     $sql = "SELECT permission_level FROM assesment_2.users WHERE uuid = ?";
     $sqlStatement = $conn->prepare($sql);
@@ -406,7 +384,7 @@ function getPermissionLevel($uuid){
  * @return int
  *
  */
-function getPasswordChange($uuid){
+function getPasswordChange(string $uuid){
     $conn = getReadonlyConn();
     $sql = "SELECT password_reset FROM assesment_2.users WHERE uuid = ?";
     $sqlStatement = $conn->prepare($sql);
@@ -437,7 +415,7 @@ function getPasswordChange($uuid){
  * @return int
  *
  */
-function getUsername($uuid){
+function getUsername(string $uuid){
     $conn = getReadonlyConn();
     $sql = "SELECT username FROM assesment_2.users WHERE uuid = ?";
     $sqlStatement = $conn->prepare($sql);
@@ -469,7 +447,8 @@ function getUsername($uuid){
  * @return bool True for valid, False for error
  *
  */
-function changePassword($uuid, $password){
+function changePassword(string $uuid, string $password): bool
+{
     $conn = getWriteConn();
     $sql = "UPDATE assesment_2.users SET password_hash = ? WHERE UUID = ?";
     $sqlStatement = $conn->prepare($sql);
@@ -497,7 +476,8 @@ function changePassword($uuid, $password){
  *
  * @return bool True for successful, false for failed
  */
-function createTask($title, $content, $status, $prio, $completionDate, $uuid){
+function createTask(string $title, string $content, int $status, int $prio, int $completionDate, string $uuid): bool
+{
     $conn = getWriteConn();
     $sql = "INSERT INTO assesment_2.tasks (uuid, title, content, status, priority, owner, completion_date) VALUES (uuid(),?,?,?,?,?,?)";
     $date = date("Y-m-d H:i:s", $completionDate);
@@ -527,7 +507,8 @@ function createTask($title, $content, $status, $prio, $completionDate, $uuid){
  *
  * @return bool True for successful, false for failed
  */
-function updateTask($taskUUID, $title, $content, $status, $prio, $completionDate, $uuid){
+function updateTask(string $taskUUID, string $title, string $content, int $status, int $prio, int $completionDate, string $uuid): bool
+{
     $conn = getWriteConn();
     $sql = "UPDATE assesment_2.tasks SET title=?, content=?, status=?, priority=?, owner=?, completion_date=? WHERE uuid=?";
     $date = date("Y-m-d H:i:s", $completionDate);
@@ -553,7 +534,8 @@ function updateTask($taskUUID, $title, $content, $status, $prio, $completionDate
  *
  * @return array The task object
  */
-function getTask($taskUUID, $userUUID){
+function getTask(string $taskUUID, string $userUUID): ?array
+{
     $conn = getReadonlyConn();
     $sql = "SELECT * FROM assesment_2.tasks WHERE uuid=?";
     $sqlStatement = $conn->prepare($sql);
@@ -596,7 +578,8 @@ function getTask($taskUUID, $userUUID){
  *
  * @return string The new session id for the user
  */
-function generateSession($uuid){
+function generateSession(string $uuid): string
+{
     $conn = getWriteConn();
     $sql = "UPDATE assesment_2.users set session_uuid = uuid() WHERE uuid = ?";
     $sqlStatement = $conn->prepare($sql);
@@ -608,7 +591,8 @@ function generateSession($uuid){
     return $user["session_uuid"];
 }
 
-function checkSession($uuid, $session){
+function checkSession($uuid, $session): bool
+{
     $conn = getReadonlyConn();
     $sql = "SELECT session_uuid FROM assesment_2.users WHERE uuid=?";
     $sqlStatement = $conn->prepare($sql);
@@ -647,7 +631,8 @@ function destroySession($uuid){
  *
  * @return int The ID of the status
  */
-function statusStrToInt($status){
+function statusStrToInt(string $status): int
+{
     switch ($status){
         case "Started": {
             return 2;
@@ -672,7 +657,8 @@ function statusStrToInt($status){
  *
  * @return string The text of the status
  */
-function statusIntToStr($status){
+function statusIntToStr(int $status): string
+{
     switch ($status){
         case 2: {
             return "Started";

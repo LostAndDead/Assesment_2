@@ -30,6 +30,11 @@ if(!$loggedIn){
     die();
 }
 
+if($permissionLevel < 1) {
+    header("Location ./homepage.php");
+    die();
+}
+
 $title = $content = $status = $date = $msg = $prio = $owner = "";
 $titleErr = $contentErr = $statusErr = $dateErr = $prioErr = "";
 

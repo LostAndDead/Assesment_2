@@ -28,11 +28,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if(!$emailErr && !$passwordErr){
         $result = checkLogin($email, $password);
+        $user = getUser(getUUID($email));
         if($result){
-            $_SESSION["uuid"] = getUUID($email);
-            $_SESSION["session_uuid"] = password_hash(generateSession(getUUID($email)), PASSWORD_DEFAULT);
-            $msg = "Login successful, redirecting...";
-            header( "refresh:3;url=homepage.php");
+            if(!$user["active"]) {
+                $msg = "User is disabled, please contact an admin.";
+            } else {
+                $_SESSION["uuid"] = getUUID($email);
+                $_SESSION["session_uuid"] = password_hash(generateSession(getUUID($email)), PASSWORD_DEFAULT);
+                $msg = "Login successful, redirecting...";
+                header( "refresh:3;url=homepage.php");
+            }
+
         } else {
             $passwordErr = "Invalid Email or Password";
             $emailErr = "Invalid Email or Password";
