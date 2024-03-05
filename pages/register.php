@@ -76,6 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             case "Worked": {
                 $msg = "User created. Page will refresh in a moment to create another user.";
+                logAction($uuid, EventType::USER_CREATED, $email);
                 header( "refresh:3;url=register.php");
                 break;
             }

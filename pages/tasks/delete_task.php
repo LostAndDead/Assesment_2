@@ -40,6 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $task = getTask($taskUUID, $uuid);
         if($task["owner"] == $uuid || $permissionLevel >= 2){
             $res = setDeleteTask($taskUUID, true);
+            logAction($uuid, EventType::TASK_DELETED, $_SERVER['REMOTE_ADDR'], $taskUUID);
             header("Location: ../homepage.php");
         } else {
             header("Location: ../homepage.php");

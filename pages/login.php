@@ -33,6 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if(!$user["active"]) {
                 $msg = "User is disabled, please contact an admin.";
             } else {
+                logAction(getUUID($email), EventType::LOGGED_IN, $_SERVER['REMOTE_ADDR']);
                 $_SESSION["uuid"] = getUUID($email);
                 $_SESSION["session_uuid"] = password_hash(generateSession(getUUID($email)), PASSWORD_DEFAULT);
                 $msg = "Login successful, redirecting...";

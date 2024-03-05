@@ -66,6 +66,7 @@ if($_SERVER["REQUEST_METHOD"] == "GET") {
         $taskUUID = $_POST["task"];
         $page = $_POST["page"];
         $res = setDeleteTask($taskUUID, false);
+        logAction($uuid, EventType::TASK_EDITED, $_SERVER['REMOTE_ADDR'], 'Active: ' . $active);
     } else {
         if (empty($_POST["userid"])) {
             $userErr = "User is required";
@@ -90,6 +91,7 @@ if($_SERVER["REQUEST_METHOD"] == "GET") {
                 $msg = "As a failsafe you cannot update your self.";
             } else {
                 $res = patchUser($userid, $permLevel, $active);
+                logAction($uuid, EventType::USER_UPDATED, $_SERVER['REMOTE_ADDR'], 'PermLevel: ' . $permLevel . ' Active: ' . $active);
                 if($res){
                     header( "refresh:1;url=./manage.php?userid=" . $userid . "&success=true");
                 } else {

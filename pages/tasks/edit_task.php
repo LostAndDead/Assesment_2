@@ -101,6 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $statusID = statusStrToInt($status);
             $completionDate = strtotime($date);
             $result = createTask($title, $content, $statusID, $prio, $completionDate, $uuid);
+            logAction($uuid, EventType::TASK_CREATED, $_SERVER['REMOTE_ADDR']);
 
             if($result){
                 $msg = "Task created, redirecting to homepage...";
@@ -112,6 +113,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $statusID = statusStrToInt($status);
             $completionDate = strtotime($date);
             $result = updateTask($taskUUID, $title, $content, $statusID, $prio, $completionDate, $owner);
+            logAction($uuid, EventType::TASK_EDITED, $_SERVER['REMOTE_ADDR'], $taskUUID);
 
             if($result){
                 $msg = "Task updated, redirecting to homepage...";

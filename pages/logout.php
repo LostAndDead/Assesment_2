@@ -9,6 +9,7 @@ if(!empty($_SESSION["uuid"])){
     if ($valid) {
         $loggedIn = true;
         destroySession($uuid);
+        logAction($uuid, EventType::LOGGED_OUT, $_SERVER['REMOTE_ADDR']);
         session_destroy();
     }
 

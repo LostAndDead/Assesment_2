@@ -45,6 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $user = getUser($uuid);
         if($res){
             $msg = "Password changed, please login again.";
+            logAction($uuid, EventType::USER_PASSWORD_RESET, $_SERVER['REMOTE_ADDR']);
             session_destroy();
             header( "refresh:3;url=login.php?email=" . $user["email"] );
         } else {

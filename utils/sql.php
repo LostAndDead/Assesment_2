@@ -674,3 +674,39 @@ function statusIntToStr(int $status): string
         }
     }
 }
+
+enum EventType{
+    case LOGGED_IN;
+    case LOGGED_OUT;
+    case TASK_CREATED;
+    case TASK_EDITED;
+    case TASK_DELETED;
+    case USER_CREATED;
+    case USER_UPDATED;
+    case USER_PASSWORD_RESET;
+
+    public function value(): string
+    {
+        return match($this) {
+            EventType::LOGGED_IN => "LOGGED_IN",
+            EventType::LOGGED_OUT => "LOGGED_OUT",
+            EventType::TASK_CREATED => "TASK_CREATED",
+            EventType::TASK_EDITED => "TASK_EDITED",
+            EventType::TASK_DELETED => "TASK_DELETED",
+            EventType::USER_CREATED => "USER_CREATED",
+            EventType::USER_UPDATED => "USER_UPDATED",
+            EventType::USER_PASSWORD_RESET => "USER_PASSWORD_RESET",
+        };
+    }
+}
+
+function logAction($uuid, EventType $action, $ip, $extraDetails = ""): void
+{
+    $conn = getWriteConn();
+    $sql = "INSERT INTO assesment_2.logs (user_uuid, event, extra_details, ip_addr) VALUES (?, ?, ?, ?);";
+    $sqlStatement = $conn->prepare($sql);
+    $actionValue = $action->value();
+    $sqlStatement->bind_param("ssss", $uuid, $actionValue, $extraDetails, $ip);
+    $sqlStatement->execute();
+    $conn->close();
+}
