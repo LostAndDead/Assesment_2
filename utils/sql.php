@@ -234,7 +234,7 @@ function getUser(string $uuid): ?array
 function patchUser(string $uuid, int $permLevel, bool $active): bool
 {
     $conn = getWriteConn();
-    $sql = "UPDATE assesment_2.users SET permission_level = ?, active = ? WHERE UUID = ?";
+    $sql = "UPDATE assesment_2.users SET permission_level = ?, active = ?, last_updated = now() WHERE UUID = ?";
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("sis", $permLevel, $active, $uuid);
     try {
@@ -262,7 +262,7 @@ function patchUser(string $uuid, int $permLevel, bool $active): bool
 function createUser(string $username, string $email, string $password, bool $passwordReset): string
 {
     $conn = getWriteConn();
-    $sql = "INSERT INTO assesment_2.users (uuid, username, email, password_hash, password_reset) VALUES (uuid(), ?, ?, ?, ?);";
+    $sql = "INSERT INTO assesment_2.users (uuid, username, email, password_hash, password_reset, last_updated) VALUES (uuid(), ?, ?, ?, ?, now());";
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("sssi", $username, $email, $password, $passwordReset);
     try {
@@ -450,7 +450,7 @@ function getUsername(string $uuid){
 function changePassword(string $uuid, string $password): bool
 {
     $conn = getWriteConn();
-    $sql = "UPDATE assesment_2.users SET password_hash = ?, password_reset=false WHERE UUID = ?";
+    $sql = "UPDATE assesment_2.users SET password_hash = ?, password_reset=false, last_updated = now() WHERE UUID = ?";
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("ss", $password, $uuid);
     try {
@@ -479,7 +479,7 @@ function changePassword(string $uuid, string $password): bool
 function createTask(string $title, string $content, int $status, int $prio, int $completionDate, string $uuid): bool
 {
     $conn = getWriteConn();
-    $sql = "INSERT INTO assesment_2.tasks (uuid, title, content, status, priority, owner, completion_date) VALUES (uuid(),?,?,?,?,?,?)";
+    $sql = "INSERT INTO assesment_2.tasks (uuid, title, content, status, priority, owner, completion_date, last_updated) VALUES (uuid(),?,?,?,?,?,?,now()";
     $date = date("Y-m-d H:i:s", $completionDate);
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("ssiiss", $title, $content, $status, $prio, $uuid, $date);
@@ -510,7 +510,7 @@ function createTask(string $title, string $content, int $status, int $prio, int 
 function updateTask(string $taskUUID, string $title, string $content, int $status, int $prio, int $completionDate, string $uuid): bool
 {
     $conn = getWriteConn();
-    $sql = "UPDATE assesment_2.tasks SET title=?, content=?, status=?, priority=?, owner=?, completion_date=? WHERE uuid=?";
+    $sql = "UPDATE assesment_2.tasks SET title=?, content=?, status=?, priority=?, owner=?, completion_date=?, last_updated = now() WHERE uuid=?";
     $date = date("Y-m-d H:i:s", $completionDate);
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("ssiisss", $title, $content, $status, $prio, $uuid, $date, $taskUUID);
@@ -581,7 +581,7 @@ function getTask(string $taskUUID, string $userUUID): ?array
 function generateSession(string $uuid): string
 {
     $conn = getWriteConn();
-    $sql = "UPDATE assesment_2.users set session_uuid = uuid() WHERE uuid = ?";
+    $sql = "UPDATE assesment_2.users set session_uuid = uuid(), last_updated = now() WHERE uuid = ?";
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("s", $uuid);
     $sqlStatement->execute();
@@ -616,7 +616,7 @@ function checkSession($uuid, $session): bool
 
 function destroySession($uuid){
     $conn = getWriteConn();
-    $sql = "UPDATE assesment_2.users set session_uuid = -1 WHERE uuid = ?";
+    $sql = "UPDATE assesment_2.users set session_uuid = -1, last_updated = now() WHERE uuid = ?";
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("s", $uuid);
     $sqlStatement->execute();
