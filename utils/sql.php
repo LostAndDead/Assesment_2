@@ -479,7 +479,7 @@ function changePassword(string $uuid, string $password): bool
 function createTask(string $title, string $content, int $status, int $prio, int $completionDate, string $uuid): bool
 {
     $conn = getWriteConn();
-    $sql = "INSERT INTO assesment_2.tasks (uuid, title, content, status, priority, owner, completion_date, last_updated) VALUES (uuid(),?,?,?,?,?,?,now()";
+    $sql = "INSERT INTO assesment_2.tasks (uuid, title, content, status, priority, owner, completion_date, last_updated) VALUES (uuid(),?,?,?,?,?,?,now())";
     $date = date("Y-m-d H:i:s", $completionDate);
     $sqlStatement = $conn->prepare($sql);
     $sqlStatement->bind_param("ssiiss", $title, $content, $status, $prio, $uuid, $date);
